@@ -10,6 +10,13 @@ A tiny, low-overhead replay-buffer clipper for Windows. Press a hotkey (default 
 - **Game audio:** WASAPI loopback of any output device (e.g. your audio interface), plus an optional mic.
 - **Priority:** the recorder gets raised GPU scheduling priority so a game at 100% GPU doesn't starve capture.
 
+## Install (one command)
+Paste this into **cmd**:
+```
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/Tashige/FastClip/main/install.ps1 | iex"
+```
+This installs ffmpeg if it's missing, builds FastClip into `%LOCALAPPDATA%\FastClip`, adds Start Menu and Desktop shortcuts, and launches it. To install from a downloaded copy instead, double-click `install.cmd`.
+
 ## Requirements
 - Windows 10/11
 - [ffmpeg](https://www.gyan.dev/ffmpeg/builds/) on PATH (`winget install Gyan.FFmpeg`) or `ffmpeg.exe` next to `FastClip.exe`
