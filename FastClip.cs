@@ -329,6 +329,22 @@ class Recorder
 
     public bool Running { get { return rec != null && !rec.HasExited; } }
 
+    // Job object with KILL_ON_JOB_CLOSE: ffmpeg dies with FastClip, even if FastClip is killed or crashes.
+    [DllImport("kernel32.dll")] static extern IntPtr CreateJobObject(IntPtr attrs, string name);
+    [DllImport("kernel32.dll")] static extern bool SetInformationJobObject(IntPtr job, int infoClass, byte[] info, int len);
+    [DllImport("kernel32.dll")] static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+    static readonly IntPtr Job = MakeJob();
+    static IntPtr MakeJob()
+    {
+        IntPtr job = CreateJobObject(IntPtr.Zero, null);
+        // JOBOBJECT_EXTENDED_LIMIT_INFORMATION: LimitFlags sits at offset 16 (x64) / 16 (x86)
+        int size = IntPtr.Size == 8 ? 144 : 112;
+        var info = new byte[size];
+        BitConverter.GetBytes(0x2000).CopyTo(info, 16);   // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        SetInformationJobObject(job, 9, info, size);
+        return job;
+    }
+
     // 4 = HIGH, 5 = REALTIME (REALTIME needs admin; falls back to HIGH)
     [DllImport("gdi32.dll")] static extern int D3DKMTSetProcessSchedulingPriorityClass(IntPtr process, int priority);
 
@@ -431,6 +447,7 @@ class Recorder
 
         var psi = new ProcessStartInfo(Ffmpeg, sb.ToString()) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardInput = loop != null };
         rec = Process.Start(psi);
+        try { AssignProcessToJobObject(Job, rec.Handle); } catch { }
         if (loop != null) loop.Attach(rec.StandardInput.BaseStream);
         // A game at 100% GPU starves screen capture, which looks like stutter. Like OBS, raise the
         // recorder's GPU scheduling priority (and CPU priority) so it still gets its frames.

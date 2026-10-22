@@ -31,6 +31,9 @@ else {
 
 # 3. build
 Get-Process FastClip -ErrorAction SilentlyContinue | Stop-Process -Force
+# older versions could leave their recorder running; stop only FastClip's ffmpeg
+Get-CimInstance Win32_Process -Filter "Name='ffmpeg.exe'" | Where-Object { $_.CommandLine -like '*FastClipBuffer*' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 New-Item -ItemType Directory -Force $dest | Out-Null
 $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) { $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
